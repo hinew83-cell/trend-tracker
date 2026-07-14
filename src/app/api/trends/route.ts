@@ -94,7 +94,7 @@ export async function GET(request: Request) {
         hl: 'ko',
         startTime,
         ...(timeRange === '1d' ? { granularTimeResolution: true } : {})
-      });
+      } as any);
     }
     
     // google-trends-api sometimes returns string, sometimes object
