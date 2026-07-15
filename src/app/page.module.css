@@ -343,4 +343,61 @@
   text-decoration: underline;
 }
 
+.communityButtons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--glass-border);
+  flex-wrap: wrap;
+}
+
+.communityBtn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid transparent;
+}
+
+.communityBtn:hover {
+  transform: translateY(-2px);
+}
+
+.theqoo {
+  background: rgba(236, 72, 153, 0.1);
+  color: #ec4899;
+  border-color: rgba(236, 72, 153, 0.2);
+}
+.theqoo:hover {
+  background: #ec4899;
+  color: white;
+}
+
+.ruliweb {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.2);
+}
+.ruliweb:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+.dogdrip {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.dogdrip:hover {
+  background: #10b981;
+  color: white;
+}
+
+
 

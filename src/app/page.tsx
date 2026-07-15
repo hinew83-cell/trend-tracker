@@ -51,6 +51,13 @@ export default function Home() {
     return num.toLocaleString();
   };
 
+  const extractCelebName = (title: string) => {
+    // Extract the first word before common delimiters like comma, space, bullet
+    const firstWord = title.split(/[,\s·'"`\[\]]/)[0];
+    // Clean up any non-alphanumeric/non-Korean characters
+    return firstWord.replace(/[^가-힣a-zA-Z0-9]/g, '').trim();
+  };
+
   return (
     <main className={styles.container}>
       <header className={styles.header}>
@@ -158,6 +165,34 @@ export default function Home() {
                           </a>
                         </div>
                       )}
+
+                      {/* Community Reactions for Hot Trends */}
+                      <div className={styles.communityButtons}>
+                        <a 
+                          href={`https://theqoo.net/index.php?act=is&is_keyword=${encodeURIComponent(item.keyword)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${styles.communityBtn} ${styles.theqoo}`}
+                        >
+                          💬 더쿠 반응
+                        </a>
+                        <a 
+                          href={`https://m.ruliweb.com/search?q=${encodeURIComponent(item.keyword)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${styles.communityBtn} ${styles.ruliweb}`}
+                        >
+                          💬 루리웹 반응
+                        </a>
+                        <a 
+                          href={`https://www.dogdrip.net/index.php?act=is&is_keyword=${encodeURIComponent(item.keyword)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${styles.communityBtn} ${styles.dogdrip}`}
+                        >
+                          💬 개드립 반응
+                        </a>
+                      </div>
                     </div>
                   );
                 })}
@@ -176,6 +211,8 @@ export default function Home() {
                 rankClass = styles.rank23;
               }
 
+              const celebName = extractCelebName(item.title);
+
               return (
                 <div key={index} className={`${styles.trendingItem} ${rankClass} glass-panel`}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
@@ -183,15 +220,48 @@ export default function Home() {
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>
                   <h3 className={styles.trendingTitle} style={{ margin: '0.5rem 0 1rem 0' }}>{item.title}</h3>
-                  <a 
-                    href={item.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className={styles.newsLink}
-                    style={{ fontSize: '0.9rem', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', width: 'fit-content' }}
-                  >
-                    🚀 기사 보러가기 →
-                  </a>
+                  
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <a 
+                      href={item.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className={styles.newsLink}
+                      style={{ fontSize: '0.9rem', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', width: 'fit-content' }}
+                    >
+                      🚀 기사 보러가기 →
+                    </a>
+                  </div>
+
+                  {/* Community Reactions for Celebrity News */}
+                  {celebName && (
+                    <div className={styles.communityButtons}>
+                      <a 
+                        href={`https://theqoo.net/index.php?act=is&is_keyword=${encodeURIComponent(celebName)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${styles.communityBtn} ${styles.theqoo}`}
+                      >
+                        💬 더쿠 {celebName} 반응
+                      </a>
+                      <a 
+                        href={`https://m.ruliweb.com/search?q=${encodeURIComponent(celebName)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${styles.communityBtn} ${styles.ruliweb}`}
+                      >
+                        💬 루리웹 {celebName} 반응
+                      </a>
+                      <a 
+                        href={`https://www.dogdrip.net/index.php?act=is&is_keyword=${encodeURIComponent(celebName)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${styles.communityBtn} ${styles.dogdrip}`}
+                      >
+                        💬 개드립 {celebName} 반응
+                      </a>
+                    </div>
+                  )}
                 </div>
               );
             })}
