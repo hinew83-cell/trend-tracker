@@ -52,9 +52,10 @@ export default function Home() {
   };
 
   const extractCelebName = (title: string) => {
-    // Extract the first word before common delimiters like comma, space, bullet
-    const firstWord = title.split(/[,\s·'"`\[\]]/)[0];
-    // Clean up any non-alphanumeric/non-Korean characters
+    // Strip common bracketed news prefixes like [단독], [공식], (포토)
+    const cleanTitle = title.replace(/^\[[^\]]+\]\s*/, '').replace(/^\([^)]+\)\s*/, '');
+    // Extract the first word before common delimiters
+    const firstWord = cleanTitle.split(/[,\s·'"`\[\]]/)[0];
     return firstWord.replace(/[^가-힣a-zA-Z0-9]/g, '').trim();
   };
 
@@ -214,28 +215,21 @@ export default function Home() {
               const celebName = extractCelebName(item.title);
 
               return (
-                <div key={index} className={`${styles.trendingItem} ${rankClass} glass-panel`}>
+                <div 
+                  key={index} 
+                  className={`${styles.trendingItem} ${rankClass} glass-panel`}
+                  onClick={() => window.open(item.link, '_blank')}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                     <span className={styles.trendingRank}>{item.source}</span>
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>
                   <h3 className={styles.trendingTitle} style={{ margin: '0.5rem 0 1rem 0' }}>{item.title}</h3>
-                  
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <a 
-                      href={item.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className={styles.newsLink}
-                      style={{ fontSize: '0.9rem', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', width: 'fit-content' }}
-                    >
-                      🚀 기사 보러가기 →
-                    </a>
-                  </div>
 
                   {/* Community Reactions for Celebrity News */}
                   {celebName && (
-                    <div className={styles.communityButtons}>
+                    <div className={styles.communityButtons} onClick={(e) => e.stopPropagation()}>
                       <a 
                         href={`https://theqoo.net/index.php?act=is&is_keyword=${encodeURIComponent(celebName)}`}
                         target="_blank"
