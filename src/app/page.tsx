@@ -4,12 +4,11 @@ import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'hot' | 'celebrity' | 'community_celebrity'>('hot');
+  const [activeTab, setActiveTab] = useState<'hot' | 'celebrity'>('hot');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [dailyData, setDailyData] = useState<any[]>([]);
   const [entData, setEntData] = useState<any[]>([]);
-  const [commEntData, setCommEntData] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<'trending' | 'volume'>('trending');
 
   useEffect(() => {
@@ -17,22 +16,14 @@ export default function Home() {
       fetchData("hot");
     } else if (activeTab === 'celebrity' && entData.length === 0) {
       fetchData("celebrity");
-    } else if (activeTab === 'community_celebrity' && commEntData.length === 0) {
-      fetchData("community_celebrity");
     }
   }, [activeTab]);
 
-  const fetchData = async (type: 'hot' | 'celebrity' | 'community_celebrity') => {
+  const fetchData = async (type: 'hot' | 'celebrity') => {
     setLoading(true);
     setError("");
     try {
-      let url = "/api/trends";
-      if (type === 'celebrity') {
-        url = "/api/trends?tab=celebrity";
-      } else if (type === 'community_celebrity') {
-        url = "/api/trends?tab=community_celebrity";
-      }
-      
+      const url = type === 'celebrity' ? "/api/trends?tab=celebrity" : "/api/trends";
       const res = await fetch(url);
       const data = await res.json();
 
@@ -42,8 +33,6 @@ export default function Home() {
 
       if (type === 'celebrity') {
         setEntData(data.data || []);
-      } else if (type === 'community_celebrity') {
-        setCommEntData(data.data || []);
       } else {
         const trendingSearches = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
         setDailyData(trendingSearches);
@@ -83,12 +72,6 @@ export default function Home() {
           onClick={() => setActiveTab('celebrity')}
         >
           🎭 연예인/셀럽
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'community_celebrity' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('community_celebrity')}
-        >
-          💬 커뮤니티 연예인
         </button>
       </div>
 
@@ -202,15 +185,12 @@ export default function Home() {
                 rankClass = styles.rank2to11;
               }
 
-              // Highlight community posts slightly differently
-              const isComm = item.isCommunity;
-
-              // Determine watermark color opacity based on rank and type (news vs community)
-              let watermarkColor = isComm ? 'rgba(236, 72, 153, 0.10)' : 'rgba(99, 102, 241, 0.10)';
+              // Determine watermark color opacity based on rank
+              let watermarkColor = 'rgba(99, 102, 241, 0.10)';
               if (index === 0) {
-                watermarkColor = isComm ? 'rgba(236, 72, 153, 0.35)' : 'rgba(99, 102, 241, 0.35)';
+                watermarkColor = 'rgba(99, 102, 241, 0.35)';
               } else if (index >= 1 && index <= 10) {
-                watermarkColor = isComm ? 'rgba(236, 72, 153, 0.22)' : 'rgba(99, 102, 241, 0.22)';
+                watermarkColor = 'rgba(99, 102, 241, 0.22)';
               }
 
               return (
@@ -218,11 +198,7 @@ export default function Home() {
                   key={index} 
                   className={`${styles.trendingItem} ${rankClass} glass-panel`}
                   onClick={() => window.open(item.link, '_blank')}
-                  style={{ 
-                    cursor: 'pointer',
-                    border: isComm ? '1px dashed rgba(236, 72, 153, 0.3)' : undefined,
-                    background: isComm ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.03), rgba(255, 255, 255, 0.01))' : undefined
-                  }}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div 
                     className={styles.rankWatermark}
@@ -231,54 +207,8 @@ export default function Home() {
                     {index + 1}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', zIndex: 1 }}>
-                    <span className={styles.trendingRank} style={{ color: isComm ? 'var(--accent-tertiary)' : undefined }}>
-                      {isComm ? `💬 ${item.source}` : `📰 ${item.source}`}
-                    </span>
-                    <span className={styles.trendingTraffic}>{item.pubDate}</span>
-                  </div>
-                  <h3 className={styles.trendingTitle} style={{ margin: '0.5rem 0 1rem 0' }}>{item.title}</h3>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {!loading && !error && activeTab === 'community_celebrity' && commEntData.length > 0 && (
-          <div className={`${styles.trendingList} animate-fade-in`}>
-            {commEntData.slice(0, 100).map((item, index) => {
-              let rankClass = styles.rank12to100;
-              if (index === 0) {
-                rankClass = styles.rank1;
-              } else if (index >= 1 && index <= 10) {
-                rankClass = styles.rank2to11;
-              }
-
-              // In this tab, everything is a community post
-              const isComm = true;
-              const watermarkColor = index === 0 
-                ? 'rgba(236, 72, 153, 0.35)' 
-                : (index >= 1 && index <= 10 ? 'rgba(236, 72, 153, 0.22)' : 'rgba(236, 72, 153, 0.10)');
-
-              return (
-                <div 
-                  key={index} 
-                  className={`${styles.trendingItem} ${rankClass} glass-panel`}
-                  onClick={() => window.open(item.link, '_blank')}
-                  style={{ 
-                    cursor: 'pointer',
-                    border: '1px dashed rgba(236, 72, 153, 0.3)',
-                    background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.03), rgba(255, 255, 255, 0.01))'
-                  }}
-                >
-                  <div 
-                    className={styles.rankWatermark}
-                    style={{ color: watermarkColor }}
-                  >
-                    {index + 1}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', zIndex: 1 }}>
-                    <span className={styles.trendingRank} style={{ color: 'var(--accent-tertiary)' }}>
-                      💬 {item.source} • {item.celebrityName}
+                    <span className={styles.trendingRank}>
+                      📰 {item.source}
                     </span>
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>

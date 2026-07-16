@@ -25,102 +25,6 @@ async function fetchNews(keyword: string) {
   return null;
 }
 
-async function fetchRuliweb() {
-  try {
-    const url = 'https://bbs.ruliweb.com/best/board/300143';
-    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const html = await res.text();
-    const items = [];
-    const rowRegex = /<a class="subject_link[^"]*?" href="([^"]*?)">([\s\S]*?)<\/a>/g;
-    let match;
-    while ((match = rowRegex.exec(html)) !== null && items.length < 30) {
-      const link = match[1];
-      let title = match[2].replace(/<[^>]*?>/g, '').trim();
-      title = title.replace(/\s*\[\d+\]$/, '');
-      items.push({ title, link, source: '루리웹 베스트' });
-    }
-    return items;
-  } catch (err) {
-    console.error("Fetch Ruliweb error:", err);
-    return [];
-  }
-}
-
-async function fetchDogdrip() {
-  try {
-    const url = 'https://www.dogdrip.net/dogdrip';
-    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const html = await res.text();
-    const items = [];
-    const reg = /href="([^"]*?dogdrip\/[^"]*?)"[^>]*?>([\s\S]*?)<\/a>/g;
-    let match;
-    while ((match = reg.exec(html)) !== null && items.length < 35) {
-      const link = match[1];
-      let text = match[2].replace(/<[^>]*?>/g, '').trim();
-      text = text.replace(/\s*\[\d+\]$/, '');
-      if (text && !text.includes('RSS') && !text.includes('dataLayer') && !text.includes('Config')) {
-        const fullLink = link.startsWith('http') ? link : `https://www.dogdrip.net${link}`;
-        items.push({ title: text, link: fullLink, source: '개드립' });
-      }
-    }
-    return items;
-  } catch (err) {
-    console.error("Fetch Dogdrip error:", err);
-    return [];
-  }
-}
-
-const SURNAMES = '김이박최정강조윤장임한오서신권황안송전홍유고문양손배백허소남심노하곽성차구우민지나임라변';
-const EXCLUDED_WORDS = new Set([
-  '유튜버', '유튜브', '이유', '일반', '인기', '정부', '전문', '조사', '정치', '사회', '문화', 
-  '한국', '미국', '일본', '중국', '경기', '경찰', '사건', '사고', '가족', '부모', '자식', 
-  '의사', '법원', '검찰', '감독', '선수', '방송', '예능', '영화', '드라마', '뉴스', '오늘', 
-  '내일', '어제', '하루', '시간', '올해', '내년', '이번', '지난', '다음', '최근', '캐릭터',
-  '축구', '야구', '농구', '배구', '골프', '테니스', '수영', '올림픽', '월드컵', '대표팀',
-  '이름', '얼굴', '나이', '결혼', '이혼', '사랑', '친구', '사람', '우리', '나라', '세계',
-  '대통령', '시장', '군수', '의원', '비서', '직원', '사장', '회사', '기업', '주식', '투자',
-  '운세', '오늘의운세', '띠별운세', '띠별', '화제', '논란', '이슈'
-]);
-
-const FAMOUS_CELEBS = new Set([
-  '아이유', 'IU', '선미', '수지', '카리나', '윈터', '닝닝', '지젤', '장원영', '안유진', '레이', '리즈', '이서', '가을',
-  '민지', '하니', '해린', '다니엘', '혜인', '제니', '지수', '로제', '리사', '태연', '윤아', '유리', '수영', '효연', '써니', '티파니', '서현',
-  '화사', '솔라', '문별', '휘인', '조이', '아이린', '슬기', '웬디', '예리', '사나', '모모', '미나', '나연', '정연', '지효', '다현', '채영', '쯔위',
-  '뉴진스', '아이브', '에스파', '르세라핌', '블랙핑크', '트와이스', '레드벨벳', '소녀시대', '방탄소년단', 'BTS', '세븐틴', '라이즈', '투어스',
-  '손흥민', '류현진', '이강인', '김민재', '페이커', '김연아', '이정후', '황희찬', '조규성', '오상욱', '신유빈', '안세영',
-  '유재석', '강호동', '신동엽', '전현무', '김성주', '안정환', '서장훈', '김희철', '탁재훈', '이상민', '임영웅', '영탁', '이찬원', '장민호', '정동원'
-]);
-
-function isCelebrity(word: string): boolean {
-  if (!word || word.length < 2 || word.length > 5) return false;
-  if (EXCLUDED_WORDS.has(word)) return false;
-  if (FAMOUS_CELEBS.has(word)) return true;
-  
-  if (/^[가-힣]{2,4}$/.test(word)) {
-    const surname = word.charAt(0);
-    if (SURNAMES.includes(surname)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function extractCelebrityFromTitle(title: string): string | null {
-  // Filter out fortunes entirely from celebrity matching
-  if (title.includes('운세') || title.includes('띠별')) return null;
-
-  const cleanTitle = title.replace(/^\[[^\]]+\]\s*/, '').replace(/^\([^)]+\)\s*/, '');
-  const words = cleanTitle.split(/[,\s·'"`\[\]\(\)\-~!\?]/);
-  for (const word of words) {
-    // Clean and strip trailing possessive particle '의'
-    const cleanWord = word.replace(/[^가-힣a-zA-Z0-9]/g, '').trim().replace(/의$/, '');
-    if (isCelebrity(cleanWord)) {
-      return cleanWord;
-    }
-  }
-  return null;
-}
-
 async function fetchEntertainmentNews() {
   try {
     const topicUrl = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtdHZHZ0pMVWlnQVAB?hl=ko&gl=KR&ceid=KR:ko';
@@ -175,49 +79,6 @@ async function fetchEntertainmentNews() {
   }
 }
 
-async function fetchCommunityCelebrity() {
-  try {
-    // 1. Fetch news to extract current hot celebrity names
-    const newsItems = await fetchEntertainmentNews();
-    const celebrityNames = newsItems
-      .map(item => extractCelebrityFromTitle(item.title))
-      .filter((name): name is string => name !== null && name.length >= 2);
-
-    // 2. Fetch community posts
-    const [ruliwebPosts, dogdripPosts] = await Promise.all([
-      fetchRuliweb(),
-      fetchDogdrip()
-    ]);
-
-    const communityPosts = [...ruliwebPosts, ...dogdripPosts];
-    const matchedCommunityItems: any[] = [];
-    const seenLinks = new Set<string>();
-
-    // 3. Filter community posts that match our extracted celebrity names
-    communityPosts.forEach(post => {
-      if (seenLinks.has(post.link)) return;
-
-      const matchedName = celebrityNames.find(name => post.title.includes(name));
-      if (matchedName) {
-        seenLinks.add(post.link);
-        matchedCommunityItems.push({
-          title: post.title,
-          link: post.link,
-          pubDate: new Date().toLocaleDateString('ko-KR'),
-          source: post.source,
-          isCommunity: true,
-          celebrityName: matchedName
-        });
-      }
-    });
-
-    return matchedCommunityItems.slice(0, 100);
-  } catch (err) {
-    console.error("Fetch community celebrity error:", err);
-    return [];
-  }
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get('keyword');
@@ -229,11 +90,6 @@ export async function GET(request: Request) {
     if (tab === 'celebrity') {
       const entNews = await fetchEntertainmentNews();
       return NextResponse.json({ data: entNews });
-    }
-    
-    if (tab === 'community_celebrity') {
-      const commCeleb = await fetchCommunityCelebrity();
-      return NextResponse.json({ data: commCeleb });
     }
 
     let result;
