@@ -124,9 +124,8 @@ function extractCelebrityFromTitle(title: string): string | null {
 async function fetchEntertainmentNews() {
   try {
     const topicUrl = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtdHZHZ0pMVWlnQVAB?hl=ko&gl=KR&ceid=KR:ko';
-    const searchUrl = 'https://news.google.com/rss/search?q=%EC%97%B0%EC%98%88&hl=ko&gl=KR&ceid=KR:ko'; // Search '연예' (entertainment)
+    const searchUrl = 'https://news.google.com/rss/search?q=%EC%97%B0%EC%98%88&hl=ko&gl=KR&ceid=KR:ko';
     
-    // Fetch both feeds in parallel to gather more news articles
     const [topicRes, searchRes] = await Promise.all([
       fetch(topicUrl).catch(() => null),
       fetch(searchUrl).catch(() => null)
@@ -142,7 +141,7 @@ async function fetchEntertainmentNews() {
     xmls.forEach(xml => {
       const itemReg = /<item>([\s\S]*?)<\/item>/g;
       let match;
-      while ((match = itemReg.exec(xml)) !== null) {
+      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
         const itemContent = match[1];
         const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
         const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
@@ -169,12 +168,22 @@ async function fetchEntertainmentNews() {
       }
     });
 
-    // Extract real celebrity names from these news items
+    return newsItems;
+  } catch (err) {
+    console.error("Fetch entertainment news error:", err);
+    return [];
+  }
+}
+
+async function fetchCommunityCelebrity() {
+  try {
+    // 1. Fetch news to extract current hot celebrity names
+    const newsItems = await fetchEntertainmentNews();
     const celebrityNames = newsItems
       .map(item => extractCelebrityFromTitle(item.title))
       .filter((name): name is string => name !== null && name.length >= 2);
 
-    // Fetch community hot posts in parallel
+    // 2. Fetch community posts
     const [ruliwebPosts, dogdripPosts] = await Promise.all([
       fetchRuliweb(),
       fetchDogdrip()
@@ -182,12 +191,15 @@ async function fetchEntertainmentNews() {
 
     const communityPosts = [...ruliwebPosts, ...dogdripPosts];
     const matchedCommunityItems: any[] = [];
+    const seenLinks = new Set<string>();
 
-    // Filter community posts that match our extracted celebrity names
+    // 3. Filter community posts that match our extracted celebrity names
     communityPosts.forEach(post => {
-      // Find which celebrity name matches
+      if (seenLinks.has(post.link)) return;
+
       const matchedName = celebrityNames.find(name => post.title.includes(name));
       if (matchedName) {
+        seenLinks.add(post.link);
         matchedCommunityItems.push({
           title: post.title,
           link: post.link,
@@ -199,31 +211,9 @@ async function fetchEntertainmentNews() {
       }
     });
 
-    // Merge news and community posts by placing community posts next to their respective celebrity news card
-    const mergedList: any[] = [];
-    newsItems.forEach(news => {
-      // Limit total merged items to 100
-      if (mergedList.length >= 100) return;
-
-      mergedList.push(news);
-      
-      const name = extractCelebrityFromTitle(news.title);
-      if (name) {
-        // Find community posts matching this celebrity
-        const relatedCommunity = matchedCommunityItems.filter(post => 
-          post.celebrityName === name && !mergedList.some(item => item.link === post.link)
-        );
-        relatedCommunity.forEach(post => {
-          if (mergedList.length < 100) {
-            mergedList.push(post);
-          }
-        });
-      }
-    });
-
-    return mergedList;
+    return matchedCommunityItems.slice(0, 100);
   } catch (err) {
-    console.error("Fetch entertainment news error:", err);
+    console.error("Fetch community celebrity error:", err);
     return [];
   }
 }
@@ -239,6 +229,11 @@ export async function GET(request: Request) {
     if (tab === 'celebrity') {
       const entNews = await fetchEntertainmentNews();
       return NextResponse.json({ data: entNews });
+    }
+    
+    if (tab === 'community_celebrity') {
+      const commCeleb = await fetchCommunityCelebrity();
+      return NextResponse.json({ data: commCeleb });
     }
 
     let result;
