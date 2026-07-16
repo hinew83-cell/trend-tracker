@@ -78,7 +78,8 @@ const EXCLUDED_WORDS = new Set([
   '내일', '어제', '하루', '시간', '올해', '내년', '이번', '지난', '다음', '최근', '캐릭터',
   '축구', '야구', '농구', '배구', '골프', '테니스', '수영', '올림픽', '월드컵', '대표팀',
   '이름', '얼굴', '나이', '결혼', '이혼', '사랑', '친구', '사람', '우리', '나라', '세계',
-  '대통령', '시장', '군수', '의원', '비서', '직원', '사장', '회사', '기업', '주식', '투자'
+  '대통령', '시장', '군수', '의원', '비서', '직원', '사장', '회사', '기업', '주식', '투자',
+  '운세', '오늘의운세', '띠별운세', '띠별', '화제', '논란', '이슈'
 ]);
 
 const FAMOUS_CELEBS = new Set([
@@ -105,10 +106,14 @@ function isCelebrity(word: string): boolean {
 }
 
 function extractCelebrityFromTitle(title: string): string | null {
+  // Filter out fortunes entirely from celebrity matching
+  if (title.includes('운세') || title.includes('띠별')) return null;
+
   const cleanTitle = title.replace(/^\[[^\]]+\]\s*/, '').replace(/^\([^)]+\)\s*/, '');
   const words = cleanTitle.split(/[,\s·'"`\[\]\(\)\-~!\?]/);
   for (const word of words) {
-    const cleanWord = word.replace(/[^가-힣a-zA-Z0-9]/g, '').trim();
+    // Clean and strip trailing possessive particle '의'
+    const cleanWord = word.replace(/[^가-힣a-zA-Z0-9]/g, '').trim().replace(/의$/, '');
     if (isCelebrity(cleanWord)) {
       return cleanWord;
     }
@@ -125,7 +130,7 @@ async function fetchEntertainmentNews() {
     const newsItems: any[] = [];
     const itemReg = /<item>([\s\S]*?)<\/item>/g;
     let match;
-    while ((match = itemReg.exec(xml)) !== null && newsItems.length < 25) {
+    while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
       const itemContent = match[1];
       const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
       const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
@@ -135,6 +140,9 @@ async function fetchEntertainmentNews() {
       const link = linkMatch ? linkMatch[1] : '';
       const pubDate = pubDateMatch ? pubDateMatch[1] : '';
       
+      // Filter out horoscope articles from the feed
+      if (title.includes('운세') || title.includes('띠별')) continue;
+
       const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
       const sourceMatch = title.match(/\s-\s([^-]+)$/);
       const source = sourceMatch ? sourceMatch[1] : '연예 뉴스';

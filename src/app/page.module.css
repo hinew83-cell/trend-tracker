@@ -105,16 +105,19 @@
 
 @media (min-width: 768px) {
   .trendingList {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(12, 1fr);
   }
   .rank1 {
+    grid-column: span 12;
+  }
+  .rank2to10 {
     grid-column: span 6;
   }
-  .rank23 {
-    grid-column: span 3;
+  .rank11to50 {
+    grid-column: span 4;
   }
-  .rankOthers {
-    grid-column: span 2;
+  .rank51to100 {
+    grid-column: span 3;
   }
 }
 
@@ -148,28 +151,39 @@
   font-weight: 700;
 }
 
-.rank23 {
+.rank2to10 {
   padding: 1.8rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.rank23:hover {
+.rank2to10:hover {
   border-color: rgba(236, 72, 153, 0.3);
 }
 
-.rank23 .trendingTitle {
-  font-size: 1.6rem;
+.rank2to10 .trendingTitle {
+  font-size: 1.5rem;
 }
 
-.rankOthers {
+.rank11to50 {
   padding: 1.3rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.rankOthers .trendingTitle {
-  font-size: 1.2rem;
+.rank11to50 .trendingTitle {
+  font-size: 1.15rem;
+}
+
+.rank51to100 {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.rank51to100 .trendingTitle {
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .trendingRank {

@@ -112,14 +112,16 @@ export default function Home() {
                   }
                   return 0; // Keep original google trending order
                 })
-                .slice(0, 50)
+                .slice(0, 100) // Support up to 100 items
                 .map((item, index) => {
                   // Determine hierarchical style class
-                  let rankClass = styles.rankOthers;
+                  let rankClass = styles.rank51to100;
                   if (index === 0) {
                     rankClass = styles.rank1;
-                  } else if (index === 1 || index === 2) {
-                    rankClass = styles.rank23;
+                  } else if (index >= 1 && index <= 9) {
+                    rankClass = styles.rank2to10;
+                  } else if (index >= 10 && index <= 49) {
+                    rankClass = styles.rank11to50;
                   }
 
                   // Calculate growth percentage (scale trafficGrowthRate down to max 100%)
@@ -168,12 +170,14 @@ export default function Home() {
         {!loading && !error && activeTab === 'celebrity' && entData.length > 0 && (
           <div className={`${styles.trendingList} animate-fade-in`}>
             {entData.map((item, index) => {
-              // We can style top 3 celebrity news cards slightly larger for aesthetic hierarchy
-              let rankClass = styles.rankOthers;
+              // Determine hierarchical style class
+              let rankClass = styles.rank51to100;
               if (index === 0) {
                 rankClass = styles.rank1;
-              } else if (index === 1 || index === 2) {
-                rankClass = styles.rank23;
+              } else if (index >= 1 && index <= 9) {
+                rankClass = styles.rank2to10;
+              } else if (index >= 10 && index <= 49) {
+                rankClass = styles.rank11to50;
               }
 
               // Highlight community posts slightly differently
@@ -192,7 +196,7 @@ export default function Home() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                     <span className={styles.trendingRank} style={{ color: isComm ? 'var(--accent-tertiary)' : undefined }}>
-                      {isComm ? `💬 ${item.source}` : `📰 ${item.source}`}
+                      {isComm ? `💬 ${item.source} • ${index + 1}위 반응` : `📰 ${item.source} • ${index + 1}위`}
                     </span>
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>
