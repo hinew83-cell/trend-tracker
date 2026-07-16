@@ -110,10 +110,10 @@
   .rank1 {
     grid-column: span 12;
   }
-  .rank2to50 {
+  .rank2to11 {
     grid-column: span 6;
   }
-  .rank51to70 {
+  .rank12to100 {
     grid-column: span 4;
   }
 }
@@ -151,32 +151,32 @@
   color: #f1f5f9; /* Slightly dimmed from pure white */
 }
 
-.rank2to50 {
+.rank2to11 {
   padding: 1.8rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.rank2to50:hover {
+.rank2to11:hover {
   border-color: rgba(236, 72, 153, 0.3);
 }
 
-.rank2to50 .trendingTitle {
+.rank2to11 .trendingTitle {
   font-size: 1.5rem;
   color: #e2e8f0; /* Dimmed text */
 }
 
-.rank51to70 {
+.rank12to100 {
   padding: 1.3rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.rank51to70:hover {
+.rank12to100:hover {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-.rank51to70 .trendingTitle {
+.rank12to100 .trendingTitle {
   font-size: 1.15rem;
   color: #cbd5e1; /* Even more dimmed for lower ranks */
 }
@@ -187,7 +187,7 @@
   bottom: -0.8rem;
   font-size: 6.5rem;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.03);
+  color: rgba(99, 102, 241, 0.08); /* Soft Theme Indigo */
   line-height: 1;
   pointer-events: none;
   user-select: none;
