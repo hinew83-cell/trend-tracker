@@ -51,14 +51,6 @@ export default function Home() {
     return num.toLocaleString();
   };
 
-  const extractCelebName = (title: string) => {
-    // Strip common bracketed news prefixes like [단독], [공식], (포토)
-    const cleanTitle = title.replace(/^\[[^\]]+\]\s*/, '').replace(/^\([^)]+\)\s*/, '');
-    // Extract the first word before common delimiters
-    const firstWord = cleanTitle.split(/[,\s·'"`\[\]]/)[0];
-    return firstWord.replace(/[^가-힣a-zA-Z0-9]/g, '').trim();
-  };
-
   return (
     <main className={styles.container}>
       <header className={styles.header}>
@@ -166,34 +158,6 @@ export default function Home() {
                           </a>
                         </div>
                       )}
-
-                      {/* Community Reactions for Hot Trends */}
-                      <div className={styles.communityButtons}>
-                        <a 
-                          href={`https://theqoo.net/index.php?act=is&is_keyword=${encodeURIComponent(item.keyword)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`${styles.communityBtn} ${styles.theqoo}`}
-                        >
-                          💬 더쿠 반응
-                        </a>
-                        <a 
-                          href={`https://m.ruliweb.com/search?q=${encodeURIComponent(item.keyword)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`${styles.communityBtn} ${styles.ruliweb}`}
-                        >
-                          💬 루리웹 반응
-                        </a>
-                        <a 
-                          href={`https://www.dogdrip.net/index.php?act=is&is_keyword=${encodeURIComponent(item.keyword)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`${styles.communityBtn} ${styles.dogdrip}`}
-                        >
-                          💬 개드립 반응
-                        </a>
-                      </div>
                     </div>
                   );
                 })}
@@ -212,50 +176,27 @@ export default function Home() {
                 rankClass = styles.rank23;
               }
 
-              const celebName = extractCelebName(item.title);
+              // Highlight community posts slightly differently
+              const isComm = item.isCommunity;
 
               return (
                 <div 
                   key={index} 
                   className={`${styles.trendingItem} ${rankClass} glass-panel`}
                   onClick={() => window.open(item.link, '_blank')}
-                  style={{ cursor: 'pointer' }}
+                  style={{ 
+                    cursor: 'pointer',
+                    border: isComm ? '1px dashed rgba(236, 72, 153, 0.3)' : undefined,
+                    background: isComm ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.03), rgba(255, 255, 255, 0.01))' : undefined
+                  }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                    <span className={styles.trendingRank}>{item.source}</span>
+                    <span className={styles.trendingRank} style={{ color: isComm ? 'var(--accent-tertiary)' : undefined }}>
+                      {isComm ? `💬 ${item.source}` : `📰 ${item.source}`}
+                    </span>
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>
                   <h3 className={styles.trendingTitle} style={{ margin: '0.5rem 0 1rem 0' }}>{item.title}</h3>
-
-                  {/* Community Reactions for Celebrity News */}
-                  {celebName && (
-                    <div className={styles.communityButtons} onClick={(e) => e.stopPropagation()}>
-                      <a 
-                        href={`https://theqoo.net/index.php?act=is&is_keyword=${encodeURIComponent(celebName)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${styles.communityBtn} ${styles.theqoo}`}
-                      >
-                        💬 더쿠 {celebName} 반응
-                      </a>
-                      <a 
-                        href={`https://m.ruliweb.com/search?q=${encodeURIComponent(celebName)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${styles.communityBtn} ${styles.ruliweb}`}
-                      >
-                        💬 루리웹 {celebName} 반응
-                      </a>
-                      <a 
-                        href={`https://www.dogdrip.net/index.php?act=is&is_keyword=${encodeURIComponent(celebName)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${styles.communityBtn} ${styles.dogdrip}`}
-                      >
-                        💬 개드립 {celebName} 반응
-                      </a>
-                    </div>
-                  )}
                 </div>
               );
             })}
