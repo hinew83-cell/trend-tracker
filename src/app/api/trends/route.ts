@@ -70,6 +70,52 @@ async function fetchDogdrip() {
   }
 }
 
+const SURNAMES = '김이박최정강조윤장임한오서신권황안송전홍유고문양손배백허소남심노하곽성차구우민지나임라변';
+const EXCLUDED_WORDS = new Set([
+  '유튜버', '유튜브', '이유', '일반', '인기', '정부', '전문', '조사', '정치', '사회', '문화', 
+  '한국', '미국', '일본', '중국', '경기', '경찰', '사건', '사고', '가족', '부모', '자식', 
+  '의사', '법원', '검찰', '감독', '선수', '방송', '예능', '영화', '드라마', '뉴스', '오늘', 
+  '내일', '어제', '하루', '시간', '올해', '내년', '이번', '지난', '다음', '최근', '캐릭터',
+  '축구', '야구', '농구', '배구', '골프', '테니스', '수영', '올림픽', '월드컵', '대표팀',
+  '이름', '얼굴', '나이', '결혼', '이혼', '사랑', '친구', '사람', '우리', '나라', '세계',
+  '대통령', '시장', '군수', '의원', '비서', '직원', '사장', '회사', '기업', '주식', '투자'
+]);
+
+const FAMOUS_CELEBS = new Set([
+  '아이유', 'IU', '선미', '수지', '카리나', '윈터', '닝닝', '지젤', '장원영', '안유진', '레이', '리즈', '이서', '가을',
+  '민지', '하니', '해린', '다니엘', '혜인', '제니', '지수', '로제', '리사', '태연', '윤아', '유리', '수영', '효연', '써니', '티파니', '서현',
+  '화사', '솔라', '문별', '휘인', '조이', '아이린', '슬기', '웬디', '예리', '사나', '모모', '미나', '나연', '정연', '지효', '다현', '채영', '쯔위',
+  '뉴진스', '아이브', '에스파', '르세라핌', '블랙핑크', '트와이스', '레드벨벳', '소녀시대', '방탄소년단', 'BTS', '세븐틴', '라이즈', '투어스',
+  '손흥민', '류현진', '이강인', '김민재', '페이커', '김연아', '이정후', '황희찬', '조규성', '오상욱', '신유빈', '안세영',
+  '유재석', '강호동', '신동엽', '전현무', '김성주', '안정환', '서장훈', '김희철', '탁재훈', '이상민', '임영웅', '영탁', '이찬원', '장민호', '정동원'
+]);
+
+function isCelebrity(word: string): boolean {
+  if (!word || word.length < 2 || word.length > 5) return false;
+  if (EXCLUDED_WORDS.has(word)) return false;
+  if (FAMOUS_CELEBS.has(word)) return true;
+  
+  if (/^[가-힣]{2,4}$/.test(word)) {
+    const surname = word.charAt(0);
+    if (SURNAMES.includes(surname)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function extractCelebrityFromTitle(title: string): string | null {
+  const cleanTitle = title.replace(/^\[[^\]]+\]\s*/, '').replace(/^\([^)]+\)\s*/, '');
+  const words = cleanTitle.split(/[,\s·'"`\[\]\(\)\-~!\?]/);
+  for (const word of words) {
+    const cleanWord = word.replace(/[^가-힣a-zA-Z0-9]/g, '').trim();
+    if (isCelebrity(cleanWord)) {
+      return cleanWord;
+    }
+  }
+  return null;
+}
+
 async function fetchEntertainmentNews() {
   try {
     const url = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtdHZHZ0pMVWlnQVAB?hl=ko&gl=KR&ceid=KR:ko';
@@ -101,13 +147,10 @@ async function fetchEntertainmentNews() {
       });
     }
 
-    // Extract search keywords from these news items to filter community posts
-    const keywords = newsItems.map(item => {
-      // Clean news prefix
-      const clean = item.title.replace(/^\[[^\]]+\]\s*/, '').replace(/^\([^)]+\)\s*/, '');
-      const firstWord = clean.split(/[,\s·'"`\[\]]/)[0];
-      return firstWord.replace(/[^가-힣a-zA-Z0-9]/g, '').trim();
-    }).filter(k => k.length >= 2); // Avoid very short keywords
+    // Extract real celebrity names from these news items
+    const celebrityNames = newsItems
+      .map(item => extractCelebrityFromTitle(item.title))
+      .filter((name): name is string => name !== null && name.length >= 2);
 
     // Fetch community hot posts in parallel
     const [ruliwebPosts, dogdripPosts] = await Promise.all([
@@ -118,33 +161,32 @@ async function fetchEntertainmentNews() {
     const communityPosts = [...ruliwebPosts, ...dogdripPosts];
     const matchedCommunityItems: any[] = [];
 
-    // Filter community posts that match our news keywords
+    // Filter community posts that match our extracted celebrity names
     communityPosts.forEach(post => {
-      const isMatch = keywords.some(kw => post.title.includes(kw));
-      if (isMatch) {
+      // Find which celebrity name matches
+      const matchedName = celebrityNames.find(name => post.title.includes(name));
+      if (matchedName) {
         matchedCommunityItems.push({
           title: post.title,
           link: post.link,
           pubDate: new Date().toLocaleDateString('ko-KR'),
           source: post.source,
-          isCommunity: true
+          isCommunity: true,
+          celebrityName: matchedName
         });
       }
     });
 
-    // Merge news and community posts by interleaving them
+    // Merge news and community posts by placing community posts next to their respective celebrity news card
     const mergedList: any[] = [];
     newsItems.forEach(news => {
       mergedList.push(news);
       
-      // Extract name of celebrity from this news item
-      const clean = news.title.replace(/^\[[^\]]+\]\s*/, '').replace(/^\([^)]+\)\s*/, '');
-      const name = clean.split(/[,\s·'"`\[\]]/)[0].replace(/[^가-힣a-zA-Z0-9]/g, '').trim();
-
-      if (name.length >= 2) {
-        // Find community posts matching this specific celebrity
+      const name = extractCelebrityFromTitle(news.title);
+      if (name) {
+        // Find community posts matching this celebrity
         const relatedCommunity = matchedCommunityItems.filter(post => 
-          post.title.includes(name) && !mergedList.some(item => item.link === post.link)
+          post.celebrityName === name && !mergedList.some(item => item.link === post.link)
         );
         mergedList.push(...relatedCommunity);
       }
