@@ -125,12 +125,20 @@ export default function Home() {
                   // Calculate growth percentage (scale trafficGrowthRate down to max 100%)
                   const growthPercentage = Math.min(100, Math.round(item.trafficGrowthRate / 10));
 
+                  // Determine watermark color opacity based on rank
+                  let watermarkColor = 'rgba(99, 102, 241, 0.10)';
+                  if (index === 0) {
+                    watermarkColor = 'rgba(99, 102, 241, 0.35)';
+                  } else if (index >= 1 && index <= 10) {
+                    watermarkColor = 'rgba(99, 102, 241, 0.22)';
+                  }
+
                   return (
                     <div 
                       key={index} 
                       className={`${styles.trendingItem} ${rankClass} glass-panel`}
                     >
-                      <div className={styles.rankWatermark}>{index + 1}</div>
+                      <div className={styles.rankWatermark} style={{ color: watermarkColor }}>{index + 1}</div>
                       <span className={styles.trendingRank}>
                         {sortBy === 'volume' ? '인기 순위' : '인기 급상승'}
                       </span>
@@ -180,6 +188,14 @@ export default function Home() {
               // Highlight community posts slightly differently
               const isComm = item.isCommunity;
 
+              // Determine watermark color opacity based on rank and type (news vs community)
+              let watermarkColor = isComm ? 'rgba(236, 72, 153, 0.10)' : 'rgba(99, 102, 241, 0.10)';
+              if (index === 0) {
+                watermarkColor = isComm ? 'rgba(236, 72, 153, 0.35)' : 'rgba(99, 102, 241, 0.35)';
+              } else if (index >= 1 && index <= 10) {
+                watermarkColor = isComm ? 'rgba(236, 72, 153, 0.22)' : 'rgba(99, 102, 241, 0.22)';
+              }
+
               return (
                 <div 
                   key={index} 
@@ -193,7 +209,7 @@ export default function Home() {
                 >
                   <div 
                     className={styles.rankWatermark}
-                    style={{ color: isComm ? 'rgba(236, 72, 153, 0.08)' : undefined }}
+                    style={{ color: watermarkColor }}
                   >
                     {index + 1}
                   </div>
