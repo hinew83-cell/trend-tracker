@@ -112,16 +112,14 @@ export default function Home() {
                   }
                   return 0; // Keep original google trending order
                 })
-                .slice(0, 100) // Support up to 100 items
+                .slice(0, 70) // Show up to 70 items
                 .map((item, index) => {
                   // Determine hierarchical style class
-                  let rankClass = styles.rank51to100;
+                  let rankClass = styles.rank51to70;
                   if (index === 0) {
                     rankClass = styles.rank1;
-                  } else if (index >= 1 && index <= 9) {
-                    rankClass = styles.rank2to10;
-                  } else if (index >= 10 && index <= 49) {
-                    rankClass = styles.rank11to50;
+                  } else if (index >= 1 && index <= 49) {
+                    rankClass = styles.rank2to50;
                   }
 
                   // Calculate growth percentage (scale trafficGrowthRate down to max 100%)
@@ -132,8 +130,9 @@ export default function Home() {
                       key={index} 
                       className={`${styles.trendingItem} ${rankClass} glass-panel`}
                     >
+                      <div className={styles.rankWatermark}>{index + 1}</div>
                       <span className={styles.trendingRank}>
-                        {sortBy === 'volume' ? `검색량 ${index + 1}위` : `${index + 1}위 인기 급상승`}
+                        {sortBy === 'volume' ? '인기 순위' : '인기 급상승'}
                       </span>
                       <h3 className={styles.trendingTitle}>{item.keyword}</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.2rem' }}>
@@ -169,15 +168,13 @@ export default function Home() {
 
         {!loading && !error && activeTab === 'celebrity' && entData.length > 0 && (
           <div className={`${styles.trendingList} animate-fade-in`}>
-            {entData.map((item, index) => {
+            {entData.slice(0, 70).map((item, index) => {
               // Determine hierarchical style class
-              let rankClass = styles.rank51to100;
+              let rankClass = styles.rank51to70;
               if (index === 0) {
                 rankClass = styles.rank1;
-              } else if (index >= 1 && index <= 9) {
-                rankClass = styles.rank2to10;
-              } else if (index >= 10 && index <= 49) {
-                rankClass = styles.rank11to50;
+              } else if (index >= 1 && index <= 49) {
+                rankClass = styles.rank2to50;
               }
 
               // Highlight community posts slightly differently
@@ -194,9 +191,10 @@ export default function Home() {
                     background: isComm ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.03), rgba(255, 255, 255, 0.01))' : undefined
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                  <div className={styles.rankWatermark}>{index + 1}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', zIndex: 1 }}>
                     <span className={styles.trendingRank} style={{ color: isComm ? 'var(--accent-tertiary)' : undefined }}>
-                      {isComm ? `💬 ${item.source} • ${index + 1}위 반응` : `📰 ${item.source} • ${index + 1}위`}
+                      {isComm ? `💬 ${item.source}` : `📰 ${item.source}`}
                     </span>
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>

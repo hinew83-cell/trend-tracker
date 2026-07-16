@@ -110,18 +110,17 @@
   .rank1 {
     grid-column: span 12;
   }
-  .rank2to10 {
+  .rank2to50 {
     grid-column: span 6;
   }
-  .rank11to50 {
+  .rank51to70 {
     grid-column: span 4;
-  }
-  .rank51to100 {
-    grid-column: span 3;
   }
 }
 
 .trendingItem {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -149,41 +148,52 @@
 .rank1 .trendingTitle {
   font-size: 2.2rem;
   font-weight: 700;
+  color: #f1f5f9; /* Slightly dimmed from pure white */
 }
 
-.rank2to10 {
+.rank2to50 {
   padding: 1.8rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.rank2to10:hover {
+.rank2to50:hover {
   border-color: rgba(236, 72, 153, 0.3);
 }
 
-.rank2to10 .trendingTitle {
+.rank2to50 .trendingTitle {
   font-size: 1.5rem;
+  color: #e2e8f0; /* Dimmed text */
 }
 
-.rank11to50 {
+.rank51to70 {
   padding: 1.3rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.rank11to50 .trendingTitle {
+.rank51to70:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.rank51to70 .trendingTitle {
   font-size: 1.15rem;
+  color: #cbd5e1; /* Even more dimmed for lower ranks */
 }
 
-.rank51to100 {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.01);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-.rank51to100 .trendingTitle {
-  font-size: 0.95rem;
-  font-weight: 500;
+.rankWatermark {
+  position: absolute;
+  right: 0.8rem;
+  bottom: -0.8rem;
+  font-size: 6.5rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.03);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  font-family: 'Outfit', sans-serif;
+  font-style: italic;
 }
 
 .trendingRank {
@@ -192,17 +202,19 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  z-index: 1;
 }
 
 .trendingTitle {
   font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.25;
+  z-index: 1;
 }
 
 .trendingTraffic {
   font-size: 0.9rem;
   color: var(--text-secondary);
+  z-index: 1;
 }
 
 .loading {
