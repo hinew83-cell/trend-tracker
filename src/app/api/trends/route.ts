@@ -123,37 +123,51 @@ function extractCelebrityFromTitle(title: string): string | null {
 
 async function fetchEntertainmentNews() {
   try {
-    const url = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtdHZHZ0pMVWlnQVAB?hl=ko&gl=KR&ceid=KR:ko';
-    const res = await fetch(url);
-    const xml = await res.text();
+    const topicUrl = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtdHZHZ0pMVWlnQVAB?hl=ko&gl=KR&ceid=KR:ko';
+    const searchUrl = 'https://news.google.com/rss/search?q=%EC%97%B0%EC%98%88&hl=ko&gl=KR&ceid=KR:ko'; // Search '연예' (entertainment)
     
+    // Fetch both feeds in parallel to gather more news articles
+    const [topicRes, searchRes] = await Promise.all([
+      fetch(topicUrl).catch(() => null),
+      fetch(searchUrl).catch(() => null)
+    ]);
+
+    const xmls: string[] = [];
+    if (topicRes) xmls.push(await topicRes.text());
+    if (searchRes) xmls.push(await searchRes.text());
+
     const newsItems: any[] = [];
-    const itemReg = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-    while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
-      const itemContent = match[1];
-      const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
-      const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
-      const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
-      
-      const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : '';
-      const link = linkMatch ? linkMatch[1] : '';
-      const pubDate = pubDateMatch ? pubDateMatch[1] : '';
-      
-      // Filter out horoscope articles from the feed
-      if (title.includes('운세') || title.includes('띠별')) continue;
+    const seenLinks = new Set<string>();
 
-      const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
-      const sourceMatch = title.match(/\s-\s([^-]+)$/);
-      const source = sourceMatch ? sourceMatch[1] : '연예 뉴스';
+    xmls.forEach(xml => {
+      const itemReg = /<item>([\s\S]*?)<\/item>/g;
+      let match;
+      while ((match = itemReg.exec(xml)) !== null) {
+        const itemContent = match[1];
+        const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
+        const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
+        const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+        
+        const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : '';
+        const link = linkMatch ? linkMatch[1] : '';
+        const pubDate = pubDateMatch ? pubDateMatch[1] : '';
+        
+        if (!link || seenLinks.has(link)) continue;
+        if (title.includes('운세') || title.includes('띠별')) continue;
 
-      newsItems.push({ 
-        title: cleanTitle, 
-        link, 
-        pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
-        source
-      });
-    }
+        seenLinks.add(link);
+        const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
+        const sourceMatch = title.match(/\s-\s([^-]+)$/);
+        const source = sourceMatch ? sourceMatch[1] : '연예 뉴스';
+
+        newsItems.push({ 
+          title: cleanTitle, 
+          link, 
+          pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
+          source
+        });
+      }
+    });
 
     // Extract real celebrity names from these news items
     const celebrityNames = newsItems
@@ -188,6 +202,9 @@ async function fetchEntertainmentNews() {
     // Merge news and community posts by placing community posts next to their respective celebrity news card
     const mergedList: any[] = [];
     newsItems.forEach(news => {
+      // Limit total merged items to 100
+      if (mergedList.length >= 100) return;
+
       mergedList.push(news);
       
       const name = extractCelebrityFromTitle(news.title);
@@ -196,7 +213,11 @@ async function fetchEntertainmentNews() {
         const relatedCommunity = matchedCommunityItems.filter(post => 
           post.celebrityName === name && !mergedList.some(item => item.link === post.link)
         );
-        mergedList.push(...relatedCommunity);
+        relatedCommunity.forEach(post => {
+          if (mergedList.length < 100) {
+            mergedList.push(post);
+          }
+        });
       }
     });
 
