@@ -11,8 +11,17 @@ export default function Home() {
   const [entData, setEntData] = useState<any[]>([]);
   const [globalEntData, setGlobalEntData] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<'trending' | 'volume'>('trending');
+  
+  // Translation and Accordion toggle states
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [translations, setTranslations] = useState<Record<number, string>>({});
+  const [translatingIndex, setTranslatingIndex] = useState<number | null>(null);
 
   useEffect(() => {
+    // Reset translation states when switching tabs
+    setExpandedIndex(null);
+    setTranslations({});
+    
     if (activeTab === 'hot' && dailyData.length === 0) {
       fetchData("hot");
     } else if (activeTab === 'celebrity' && entData.length === 0) {
@@ -56,6 +65,34 @@ export default function Home() {
     }
   };
 
+  const handleToggleTranslation = async (index: number, snippet: string) => {
+    if (expandedIndex === index) {
+      setExpandedIndex(null);
+      return;
+    }
+    
+    setExpandedIndex(index);
+
+    if (translations[index]) return; // Already translated
+
+    setTranslatingIndex(index);
+    try {
+      const textToTranslate = snippet || "No description available.";
+      const res = await fetch(`/api/trends?tab=translate&text=${encodeURIComponent(textToTranslate)}`);
+      const data = await res.json();
+      if (data.translation) {
+        setTranslations(prev => ({ ...prev, [index]: data.translation }));
+      } else {
+        setTranslations(prev => ({ ...prev, [index]: "번역에 실패했습니다." }));
+      }
+    } catch (err) {
+      console.error("Translation error:", err);
+      setTranslations(prev => ({ ...prev, [index]: "번역 중 오류가 발생했습니다." }));
+    } finally {
+      setTranslatingIndex(null);
+    }
+  };
+
   const formatTraffic = (traffic: number | string) => {
     const num = typeof traffic === 'string' ? parseInt(traffic, 10) : traffic;
     if (isNaN(num)) return traffic;
@@ -66,7 +103,7 @@ export default function Home() {
     <main className={styles.container}>
       <header className={styles.header}>
         <h1 className={`${styles.title} gradient-text`}>
-          트렌드 트래커 <span className={styles.version}>v0.12</span>
+          트렌드 트래커 <span className={styles.version}>v0.13</span>
         </h1>
         <p className={styles.subtitle}>
           실시간 급상승 검색어와 연예/셀럽의 핫한 소식을 한눈에 파악하세요.
@@ -257,11 +294,12 @@ export default function Home() {
                 watermarkColor = 'rgba(76, 201, 240, 0.22)';
               }
 
+              const isExpanded = expandedIndex === index;
               return (
                 <div 
                   key={index} 
-                  className={`${styles.trendingItem} ${rankClass} glass-panel`}
-                  onClick={() => window.open(item.link, '_blank')}
+                  className={`${styles.trendingItem} ${rankClass} ${isExpanded ? styles.expandedCard : ''} glass-panel`}
+                  onClick={() => handleToggleTranslation(index, item.snippet)}
                   style={{ cursor: 'pointer' }}
                 >
                   <div 
@@ -277,6 +315,39 @@ export default function Home() {
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>
                   <h3 className={styles.trendingTitle} style={{ margin: '0.5rem 0 1rem 0' }}>{item.title}</h3>
+
+                  {isExpanded && (
+                    <div className={styles.expandedContent} onClick={(e) => e.stopPropagation()}>
+                      <div className={styles.originalInfo}>
+                        <span className={styles.infoLabel}>Original Title:</span>
+                        <p className={styles.originalTitleText}>{item.originalTitle}</p>
+                      </div>
+                      <div className={styles.translationInfo}>
+                        <span className={styles.infoLabel}>기사 내용 번역본:</span>
+                        {translatingIndex === index ? (
+                          <div className={styles.translationLoading}>
+                            <span className={styles.spinnerIcon}>🔄</span> 번역기를 돌리는 중...
+                          </div>
+                        ) : (
+                          <p className={styles.translationText}>{translations[index]}</p>
+                        )}
+                      </div>
+                      <a 
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.originalLinkButton}
+                      >
+                        기사 원문 보기 ↗
+                      </a>
+                    </div>
+                  )}
+
+                  <div className={styles.toggleArrowWrapper}>
+                    <span className={`${styles.toggleArrow} ${isExpanded ? styles.arrowExpanded : ''}`}>
+                      ↓
+                    </span>
+                  </div>
                 </div>
               );
             })}
