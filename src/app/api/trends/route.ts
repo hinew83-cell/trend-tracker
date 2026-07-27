@@ -79,18 +79,6 @@ async function fetchEntertainmentNews() {
   }
 }
 
-async function translateToKorean(text: string): Promise<string> {
-  if (!text) return '';
-  try {
-    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(text)}`);
-    if (!res.ok) return text;
-    const data = await res.json();
-    return data[0][0][0] || text;
-  } catch (err) {
-    return text;
-  }
-}
-
 async function fetchGlobalCelebrityNews() {
   try {
     const topicUrl = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtVnpHZ0pMVWlnQVAB?hl=en-US&gl=US&ceid=US:en';
@@ -111,23 +99,16 @@ async function fetchGlobalCelebrityNews() {
     xmls.forEach(xml => {
       const itemReg = /<item>([\s\S]*?)<\/item>/g;
       let match;
-      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 50) {
+      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
         const itemContent = match[1];
         const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
         const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
         const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
-        const descMatch = itemContent.match(/<description>([\s\S]*?)<\/description>/);
         
         const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : '';
         const link = linkMatch ? linkMatch[1] : '';
         const pubDate = pubDateMatch ? pubDateMatch[1] : '';
         
-        let snippet = descMatch ? descMatch[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1') : '';
-        // Clean description snippet from HTML tags
-        snippet = snippet.replace(/<[^>]*>?/gm, '').trim();
-        // Truncate snippet to 300 chars
-        if (snippet.length > 300) snippet = snippet.slice(0, 300) + '...';
-
         if (!link || seenLinks.has(link)) continue;
         
         seenLinks.add(link);
@@ -136,27 +117,15 @@ async function fetchGlobalCelebrityNews() {
         const source = sourceMatch ? sourceMatch[1] : 'Global News';
 
         newsItems.push({ 
-          originalTitle: cleanTitle, 
+          title: cleanTitle, 
           link, 
           pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
-          source,
-          snippet
+          source
         });
       }
     });
 
-    // Translate the titles to Korean in parallel
-    const translatedItems = await Promise.all(
-      newsItems.map(async (item) => {
-        const translatedTitle = await translateToKorean(item.originalTitle);
-        return {
-          ...item,
-          title: translatedTitle
-        };
-      })
-    );
-
-    return translatedItems;
+    return newsItems;
   } catch (err) {
     console.error("Fetch global celebrity news error:", err);
     return [];
@@ -171,13 +140,6 @@ export async function GET(request: Request) {
   const tab = searchParams.get('tab');
 
   try {
-    if (tab === 'translate') {
-      const textToTranslate = searchParams.get('text');
-      if (!textToTranslate) return NextResponse.json({ error: "Missing text" }, { status: 400 });
-      const translated = await translateToKorean(textToTranslate);
-      return NextResponse.json({ translation: translated });
-    }
-
     if (tab === 'celebrity') {
       const entNews = await fetchEntertainmentNews();
       return NextResponse.json({ data: entNews });
