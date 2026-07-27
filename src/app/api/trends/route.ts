@@ -79,6 +79,50 @@ async function fetchEntertainmentNews() {
   }
 }
 
+async function fetchGlobalCelebrityNews() {
+  try {
+    const query = encodeURIComponent('헐리우드 OR 팝스타 OR "해외 연예" OR 빌보드 OR "해외 셀럽" OR "해외 스타"');
+    const url = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
+    const res = await fetch(url);
+    const xml = await res.text();
+    
+    const newsItems: any[] = [];
+    const seenLinks = new Set<string>();
+    const itemReg = /<item>([\s\S]*?)<\/item>/g;
+    let match;
+    while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
+      const itemContent = match[1];
+      const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
+      const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
+      const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+      
+      const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : '';
+      const link = linkMatch ? linkMatch[1] : '';
+      const pubDate = pubDateMatch ? pubDateMatch[1] : '';
+      
+      if (!link || seenLinks.has(link)) continue;
+      if (title.includes('운세') || title.includes('띠별')) continue;
+
+      seenLinks.add(link);
+      const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
+      const sourceMatch = title.match(/\s-\s([^-]+)$/);
+      const source = sourceMatch ? sourceMatch[1] : '해외 연예';
+
+      newsItems.push({ 
+        title: cleanTitle, 
+        link, 
+        pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
+        source
+      });
+    }
+
+    return newsItems;
+  } catch (err) {
+    console.error("Fetch global celebrity news error:", err);
+    return [];
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get('keyword');
@@ -90,6 +134,11 @@ export async function GET(request: Request) {
     if (tab === 'celebrity') {
       const entNews = await fetchEntertainmentNews();
       return NextResponse.json({ data: entNews });
+    }
+    
+    if (tab === 'global_celebrity') {
+      const globalEntNews = await fetchGlobalCelebrityNews();
+      return NextResponse.json({ data: globalEntNews });
     }
 
     let result;

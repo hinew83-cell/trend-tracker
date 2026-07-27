@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'hot' | 'celebrity'>('hot');
+  const [activeTab, setActiveTab] = useState<'hot' | 'celebrity' | 'global_celebrity'>('hot');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [dailyData, setDailyData] = useState<any[]>([]);
   const [entData, setEntData] = useState<any[]>([]);
+  const [globalEntData, setGlobalEntData] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<'trending' | 'volume'>('trending');
 
   useEffect(() => {
@@ -16,14 +17,22 @@ export default function Home() {
       fetchData("hot");
     } else if (activeTab === 'celebrity' && entData.length === 0) {
       fetchData("celebrity");
+    } else if (activeTab === 'global_celebrity' && globalEntData.length === 0) {
+      fetchData("global_celebrity");
     }
   }, [activeTab]);
 
-  const fetchData = async (type: 'hot' | 'celebrity') => {
+  const fetchData = async (type: 'hot' | 'celebrity' | 'global_celebrity') => {
     setLoading(true);
     setError("");
     try {
-      const url = type === 'celebrity' ? "/api/trends?tab=celebrity" : "/api/trends";
+      let url = "/api/trends";
+      if (type === 'celebrity') {
+        url = "/api/trends?tab=celebrity";
+      } else if (type === 'global_celebrity') {
+        url = "/api/trends?tab=global_celebrity";
+      }
+      
       const res = await fetch(url);
       const data = await res.json();
 
@@ -33,6 +42,8 @@ export default function Home() {
 
       if (type === 'celebrity') {
         setEntData(data.data || []);
+      } else if (type === 'global_celebrity') {
+        setGlobalEntData(data.data || []);
       } else {
         const trendingSearches = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
         setDailyData(trendingSearches);
@@ -54,7 +65,9 @@ export default function Home() {
   return (
     <main className={styles.container}>
       <header className={styles.header}>
-        <h1 className={`${styles.title} gradient-text`}>트렌드 트래커</h1>
+        <h1 className={`${styles.title} gradient-text`}>
+          트렌드 트래커 <span className={styles.version}>v0.11</span>
+        </h1>
         <p className={styles.subtitle}>
           실시간 급상승 검색어와 연예/셀럽의 핫한 소식을 한눈에 파악하세요.
         </p>
@@ -72,6 +85,12 @@ export default function Home() {
           onClick={() => setActiveTab('celebrity')}
         >
           🎭 연예인/셀럽
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'global_celebrity' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('global_celebrity')}
+        >
+          🌐 해외 셀럽
         </button>
       </div>
 
@@ -209,6 +228,51 @@ export default function Home() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', zIndex: 1 }}>
                     <span className={styles.trendingRank}>
                       📰 {item.source}
+                    </span>
+                    <span className={styles.trendingTraffic}>{item.pubDate}</span>
+                  </div>
+                  <h3 className={styles.trendingTitle} style={{ margin: '0.5rem 0 1rem 0' }}>{item.title}</h3>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && !error && activeTab === 'global_celebrity' && globalEntData.length > 0 && (
+          <div className={`${styles.trendingList} animate-fade-in`}>
+            {globalEntData.slice(0, 100).map((item, index) => {
+              // Determine hierarchical style class
+              let rankClass = styles.rank12to100;
+              if (index === 0) {
+                rankClass = styles.rank1;
+              } else if (index >= 1 && index <= 10) {
+                rankClass = styles.rank2to11;
+              }
+
+              // Determine watermark color opacity based on rank (Teal accent for global celebrities)
+              let watermarkColor = 'rgba(76, 201, 240, 0.10)';
+              if (index === 0) {
+                watermarkColor = 'rgba(76, 201, 240, 0.35)';
+              } else if (index >= 1 && index <= 10) {
+                watermarkColor = 'rgba(76, 201, 240, 0.22)';
+              }
+
+              return (
+                <div 
+                  key={index} 
+                  className={`${styles.trendingItem} ${rankClass} glass-panel`}
+                  onClick={() => window.open(item.link, '_blank')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div 
+                    className={styles.rankWatermark}
+                    style={{ color: watermarkColor }}
+                  >
+                    {index + 1}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', zIndex: 1 }}>
+                    <span className={styles.trendingRank}>
+                      🌐 {item.source}
                     </span>
                     <span className={styles.trendingTraffic}>{item.pubDate}</span>
                   </div>
