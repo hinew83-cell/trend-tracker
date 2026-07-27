@@ -66,7 +66,7 @@ export default function Home() {
     <main className={styles.container}>
       <header className={styles.header}>
         <h1 className={`${styles.title} gradient-text`}>
-          트렌드 트래커 <span className={styles.version}>v0.11</span>
+          트렌드 트래커 <span className={styles.version}>v0.12</span>
         </h1>
         <p className={styles.subtitle}>
           실시간 급상승 검색어와 연예/셀럽의 핫한 소식을 한눈에 파악하세요.

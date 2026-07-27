@@ -81,40 +81,51 @@ async function fetchEntertainmentNews() {
 
 async function fetchGlobalCelebrityNews() {
   try {
-    const query = encodeURIComponent('헐리우드 OR 팝스타 OR "해외 연예" OR 빌보드 OR "해외 셀럽" OR "해외 스타"');
-    const url = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
-    const res = await fetch(url);
-    const xml = await res.text();
+    const topicUrl = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtVnpHZ0pMVWlnQVAB?hl=en-US&gl=US&ceid=US:en';
+    const searchUrl = 'https://news.google.com/rss/search?q=celebrity+OR+hollywood+OR+popstar+OR+billboard&hl=en-US&gl=US&ceid=US:en';
     
+    // Fetch both US feeds in parallel to get authentic global celebrity news
+    const [topicRes, searchRes] = await Promise.all([
+      fetch(topicUrl).catch(() => null),
+      fetch(searchUrl).catch(() => null)
+    ]);
+
+    const xmls: string[] = [];
+    if (topicRes) xmls.push(await topicRes.text());
+    if (searchRes) xmls.push(await searchRes.text());
+
     const newsItems: any[] = [];
     const seenLinks = new Set<string>();
-    const itemReg = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-    while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
-      const itemContent = match[1];
-      const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
-      const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
-      const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
-      
-      const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : '';
-      const link = linkMatch ? linkMatch[1] : '';
-      const pubDate = pubDateMatch ? pubDateMatch[1] : '';
-      
-      if (!link || seenLinks.has(link)) continue;
-      if (title.includes('운세') || title.includes('띠별')) continue;
+    
+    xmls.forEach(xml => {
+      const itemReg = /<item>([\s\S]*?)<\/item>/g;
+      let match;
+      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
+        const itemContent = match[1];
+        const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
+        const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
+        const pubDateMatch = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+        
+        const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : '';
+        const link = linkMatch ? linkMatch[1] : '';
+        const pubDate = pubDateMatch ? pubDateMatch[1] : '';
+        
+        if (!link || seenLinks.has(link)) continue;
+        
+        // Filter out any unwanted topics if necessary
+        seenLinks.add(link);
+        const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
+        const sourceMatch = title.match(/\s-\s([^-]+)$/);
+        const source = sourceMatch ? sourceMatch[1] : 'Global News';
 
-      seenLinks.add(link);
-      const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
-      const sourceMatch = title.match(/\s-\s([^-]+)$/);
-      const source = sourceMatch ? sourceMatch[1] : '해외 연예';
-
-      newsItems.push({ 
-        title: cleanTitle, 
-        link, 
-        pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
-        source
-      });
-    }
+        newsItems.push({ 
+          title: cleanTitle, 
+          link, 
+          pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
+          source
+        });
+      }
+    });
 
     return newsItems;
   } catch (err) {
