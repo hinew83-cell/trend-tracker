@@ -79,6 +79,18 @@ async function fetchEntertainmentNews() {
   }
 }
 
+async function translateToKorean(text: string): Promise<string> {
+  if (!text) return '';
+  try {
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(text)}`);
+    if (!res.ok) return text;
+    const data = await res.json();
+    return data[0][0][0] || text;
+  } catch (err) {
+    return text;
+  }
+}
+
 async function fetchGlobalCelebrityNews() {
   try {
     const topicUrl = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtVnpHZ0pMVWlnQVAB?hl=en-US&gl=US&ceid=US:en';
@@ -99,7 +111,7 @@ async function fetchGlobalCelebrityNews() {
     xmls.forEach(xml => {
       const itemReg = /<item>([\s\S]*?)<\/item>/g;
       let match;
-      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
+      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 50) { // Limit to 50 for quick translation
         const itemContent = match[1];
         const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
         const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
@@ -117,7 +129,7 @@ async function fetchGlobalCelebrityNews() {
         const source = sourceMatch ? sourceMatch[1] : 'Global News';
 
         newsItems.push({ 
-          title: cleanTitle, 
+          originalTitle: cleanTitle, 
           link, 
           pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
           source
@@ -125,7 +137,20 @@ async function fetchGlobalCelebrityNews() {
       }
     });
 
-    return newsItems;
+    // Translate the titles to Korean in parallel
+    const translatedItems = await Promise.all(
+      newsItems.map(async (item) => {
+        const translatedTitle = await translateToKorean(item.originalTitle);
+        return {
+          title: translatedTitle,
+          link: item.link,
+          pubDate: item.pubDate,
+          source: item.source
+        };
+      })
+    );
+
+    return translatedItems;
   } catch (err) {
     console.error("Fetch global celebrity news error:", err);
     return [];
