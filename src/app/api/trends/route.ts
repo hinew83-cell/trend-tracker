@@ -39,13 +39,12 @@ async function fetchEntertainmentNews() {
     if (topicRes) xmls.push(await topicRes.text());
     if (searchRes) xmls.push(await searchRes.text());
 
-    const newsItems: any[] = [];
-    const seenLinks = new Set<string>();
+    const allItems: any[] = [];
 
     xmls.forEach(xml => {
       const itemReg = /<item>([\s\S]*?)<\/item>/g;
       let match;
-      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 100) {
+      while ((match = itemReg.exec(xml)) !== null) {
         const itemContent = match[1];
         const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
         const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
@@ -55,22 +54,42 @@ async function fetchEntertainmentNews() {
         const link = linkMatch ? linkMatch[1] : '';
         const pubDate = pubDateMatch ? pubDateMatch[1] : '';
         
-        if (!link || seenLinks.has(link)) continue;
+        if (!link) continue;
         if (title.includes('운세') || title.includes('띠별')) continue;
 
-        seenLinks.add(link);
         const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
         const sourceMatch = title.match(/\s-\s([^-]+)$/);
         const source = sourceMatch ? sourceMatch[1] : '연예 뉴스';
+        const parsedDate = pubDate ? new Date(pubDate) : new Date(0);
 
-        newsItems.push({ 
+        allItems.push({ 
           title: cleanTitle, 
           link, 
-          pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
+          rawDate: parsedDate,
+          pubDateStr: parsedDate.getTime() > 0 ? parsedDate.toLocaleDateString('ko-KR') : '',
           source
         });
       }
     });
+
+    // Sort by publication date descending (newest first)
+    allItems.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
+
+    // Deduplicate by link
+    const newsItems: any[] = [];
+    const seenLinks = new Set<string>();
+    for (const item of allItems) {
+      if (newsItems.length >= 100) break;
+      if (!seenLinks.has(item.link)) {
+        seenLinks.add(item.link);
+        newsItems.push({
+          title: item.title,
+          link: item.link,
+          pubDate: item.pubDateStr,
+          source: item.source
+        });
+      }
+    }
 
     return newsItems;
   } catch (err) {
@@ -105,13 +124,12 @@ async function fetchGlobalCelebrityNews() {
     if (topicRes) xmls.push(await topicRes.text());
     if (searchRes) xmls.push(await searchRes.text());
 
-    const newsItems: any[] = [];
-    const seenLinks = new Set<string>();
+    const allItems: any[] = [];
     
     xmls.forEach(xml => {
       const itemReg = /<item>([\s\S]*?)<\/item>/g;
       let match;
-      while ((match = itemReg.exec(xml)) !== null && newsItems.length < 50) { // Limit to 50 for quick translation
+      while ((match = itemReg.exec(xml)) !== null) {
         const itemContent = match[1];
         const titleMatch = itemContent.match(/<title>([\s\S]*?)<\/title>/);
         const linkMatch = itemContent.match(/<link>([\s\S]*?)<\/link>/);
@@ -121,21 +139,36 @@ async function fetchGlobalCelebrityNews() {
         const link = linkMatch ? linkMatch[1] : '';
         const pubDate = pubDateMatch ? pubDateMatch[1] : '';
         
-        if (!link || seenLinks.has(link)) continue;
+        if (!link) continue;
         
-        seenLinks.add(link);
         const cleanTitle = title.replace(/\s-\s[^-]+$/, '');
         const sourceMatch = title.match(/\s-\s([^-]+)$/);
         const source = sourceMatch ? sourceMatch[1] : 'Global News';
+        const parsedDate = pubDate ? new Date(pubDate) : new Date(0);
 
-        newsItems.push({ 
+        allItems.push({ 
           originalTitle: cleanTitle, 
           link, 
-          pubDate: pubDate ? new Date(pubDate).toLocaleDateString('ko-KR') : '',
+          rawDate: parsedDate,
+          pubDateStr: parsedDate.getTime() > 0 ? parsedDate.toLocaleDateString('ko-KR') : '',
           source
         });
       }
     });
+
+    // Sort by publication date descending (newest first)
+    allItems.sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
+
+    // Deduplicate by link
+    const newsItems: any[] = [];
+    const seenLinks = new Set<string>();
+    for (const item of allItems) {
+      if (newsItems.length >= 50) break; // Limit to 50 for quick translation
+      if (!seenLinks.has(item.link)) {
+        seenLinks.add(item.link);
+        newsItems.push(item);
+      }
+    }
 
     // Translate the titles to Korean in parallel
     const translatedItems = await Promise.all(
@@ -144,7 +177,7 @@ async function fetchGlobalCelebrityNews() {
         return {
           title: translatedTitle,
           link: item.link,
-          pubDate: item.pubDate,
+          pubDate: item.pubDateStr,
           source: item.source
         };
       })
