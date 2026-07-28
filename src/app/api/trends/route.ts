@@ -112,8 +112,8 @@ async function translateToKorean(text: string): Promise<string> {
 
 async function fetchGlobalCelebrityNews() {
   try {
-    const topicUrl = 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNREpxYW5RU0FtVnpHZ0pMVWlnQVAB?hl=en-US&gl=US&ceid=US:en';
-    const searchUrl = 'https://news.google.com/rss/search?q=celebrity+OR+hollywood+OR+popstar+OR+billboard&hl=en-US&gl=US&ceid=US:en';
+    const topicUrl = 'https://news.google.com/rss/topics/CAAqMggKIhrDQkFTRWdvSUwyMHZNREpxYW5RU0FtVnpHZ0pMVWlnQVABFmdjbD1lbnRlcnRhaW5tZW50Kg4IACoqCAowgIKADjD2AToDZW5fVVM?hl=en-US&gl=US&ceid=US:en';
+    const searchUrl = 'https://news.google.com/rss/search?q=(actor+OR+actress+OR+singer+OR+popstar+OR+celeb+OR+superstar)+news&hl=en-US&gl=US&ceid=US:en';
     
     const [topicRes, searchRes] = await Promise.all([
       fetch(topicUrl).catch(() => null),
